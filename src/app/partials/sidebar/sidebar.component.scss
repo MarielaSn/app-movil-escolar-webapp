@@ -141,3 +141,26 @@ nav {
   height: 100%; // <--- ¡No uses height: 100vh aquí!
 }
 
+// ESTILOS NUEVOS PARA EL DROPDOWN
+// Estilo para el padre cuando está abierto
+.sidebar-list li.active-parent {
+  background-color: rgba($sidebar-hover, 0.5);
+}
+
+// Estilo para los hijos (los ítems del submenú)
+.sidebar-list li.submenu-item {
+  padding-left: 2.5rem; // Sangría para que se vea anidado
+  background-color: #1a2c48; // Un tono más oscuro que el fondo normal (sidebar-accent)
+  font-size: 0.95rem; // Texto ligeramente más pequeño
+  border-left: 4px solid transparent; // Borde invisible para mantener alineación
+
+  &:hover {
+    background-color: $sidebar-hover;
+    border-left: 4px solid $sidebar-active; // Efecto visual al pasar el mouse
+  }
+
+  mat-icon {
+    font-size: 1.1em; // Iconos un poco más pequeños
+    margin-right: 0.5rem;
+  }
+}

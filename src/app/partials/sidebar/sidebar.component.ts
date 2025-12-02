@@ -11,6 +11,9 @@ export class SidebarComponent implements OnInit {
   mobileOpen = false;
   isMobileView = window.innerWidth < 900;
   userRole: string = '';
+  
+  // Variable para el dropdown
+  public isEventosOpen: boolean = false;
 
   constructor(
     private router: Router,
@@ -19,7 +22,6 @@ export class SidebarComponent implements OnInit {
 
   ngOnInit(): void {
     this.userRole = this.facadeService.getUserGroup();
-    console.log('User role in sidebar:', this.userRole);
   }
 
   @HostListener('window:resize')
@@ -38,64 +40,32 @@ export class SidebarComponent implements OnInit {
     this.mobileOpen = false;
   }
 
+  // Función para abrir/cerrar el menú de eventos
+  toggleEventos() {
+    this.isEventosOpen = !this.isEventosOpen;
+  }
+
   logout() {
     this.facadeService.logout().subscribe(
-      (response) => {
-        console.log('Logout successful');
-        this.facadeService.destroyUser();
-        this.router.navigate(['/login']);
-        this.closeSidebar();
-      },
-      (error) => {
-        console.error('Logout error:', error);
-        // Fallback: clear local data and navigate anyway
-        this.facadeService.destroyUser();
-        this.router.navigate(['/login']);
-        this.closeSidebar();
-      }
+      () => { this.limpiarYSalir(); },
+      () => { this.limpiarYSalir(); }
     );
   }
 
-  // Helper methods to check user roles
-  isAdmin(): boolean {
-    return this.userRole === 'administrador';
+  limpiarYSalir(){
+    this.facadeService.destroyUser();
+    this.router.navigate(['/login']);
+    this.closeSidebar();
   }
 
-  isTeacher(): boolean {
-    return this.userRole === 'maestro';
-  }
+  // Helpers de roles
+  isAdmin(): boolean { return this.userRole === 'administrador'; }
+  isTeacher(): boolean { return this.userRole === 'maestro'; }
+  isStudent(): boolean { return this.userRole === 'alumno'; }
 
-  isStudent(): boolean {
-    return this.userRole === 'alumno';
-  }
-
-  // Check if user can see admin-only items
-  canSeeAdminItems(): boolean {
-    return this.isAdmin();
-  }
-
-  // Check if user can see teacher-level items
-  canSeeTeacherItems(): boolean {
-    return this.isAdmin() || this.isTeacher();
-  }
-
-  // Check if user can see all items (admin, teacher, student)
-  canSeeStudentItems(): boolean {
-    return this.isAdmin() || this.isTeacher() || this.isStudent();
-  }
-
-  // Check if user can see Inicio (admin and teacher only, not student)
-  canSeeHomeItem(): boolean {
-    return this.isAdmin() || this.isTeacher();
-  }
-
-  canSeeRegisterItem(): boolean {
-    return this.isAdmin() || this.isTeacher();
-  }
-
-  canSeeAllUsers() {
-    const rol = this.facadeService.getUserGroup();
-    return (rol === 'admin' || rol === 'maestro' || rol === 'alumno');
-  }
-  
+  canSeeAdminItems(): boolean { return this.isAdmin(); }
+  canSeeTeacherItems(): boolean { return this.isAdmin() || this.isTeacher(); }
+  canSeeStudentItems(): boolean { return this.isAdmin() || this.isTeacher() || this.isStudent(); }
+  canSeeHomeItem(): boolean { return this.isAdmin() || this.isTeacher(); }
+  canSeeRegisterItem(): boolean { return this.isAdmin() || this.isTeacher(); }
 }

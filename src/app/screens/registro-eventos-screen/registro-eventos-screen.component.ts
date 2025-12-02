@@ -1,12 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog'; // Importar Dialog
+import { MatDialog } from '@angular/material/dialog';
 import { EventosService } from 'src/app/services/eventos.service';
 import { FacadeService } from 'src/app/services/facade.service';
 import { MaestrosService } from 'src/app/services/maestros.service';
 import { AdministradoresService } from 'src/app/services/administradores.service';
-// Reutilizamos el modal de eliminar para la confirmación, cambiándole el texto
 import { EliminarUserModalComponent } from 'src/app/modals/eliminar-user-modal/eliminar-user-modal.component';
 
 @Component({
@@ -21,7 +20,6 @@ export class RegistroEventosScreenComponent implements OnInit {
   public errors: any = {};
   public idEvento: number = 0;
   
-  // Listas para selects
   public lista_tipos = ["Conferencia", "Taller", "Seminario", "Concurso"];
   public lista_programas = [
     "Ingeniería en Ciencias de la Computación",
@@ -30,7 +28,6 @@ export class RegistroEventosScreenComponent implements OnInit {
   ];
   public lista_responsables: any[] = [];
 
-  // Checkboxes de público
   public publico_options = [
     { value: 'Estudiantes', label: 'Estudiantes', checked: false },
     { value: 'Profesores', label: 'Profesores', checked: false },
@@ -45,13 +42,19 @@ export class RegistroEventosScreenComponent implements OnInit {
     private facadeService: FacadeService,
     private maestrosService: MaestrosService,
     private administradoresService: AdministradoresService,
-    private dialog: MatDialog // Inyectar MatDialog
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
+    // REQUISITO 18: Seguridad extra (solo admin puede entrar aquí)
+    if(this.facadeService.getUserGroup() !== 'administrador'){
+      alert("Acceso denegado. Solo los administradores pueden registrar eventos.");
+      this.router.navigate(['/home']);
+      return;
+    }
+
     this.obtenerResponsables();
 
-    // Verificar si es Editar o Nuevo
     if (this.activatedRoute.snapshot.params['id']) {
       this.isUpdate = true;
       this.idEvento = this.activatedRoute.snapshot.params['id'];
@@ -62,11 +65,8 @@ export class RegistroEventosScreenComponent implements OnInit {
     }
   }
 
-  // PUNTO 9: Carga Real de Responsables
   public obtenerResponsables() {
     this.lista_responsables = [];
-    
-    // 1. Obtener Maestros
     this.maestrosService.obtenerListaMaestros().subscribe(
       (maestros) => {
         maestros.forEach((m: any) => {
@@ -75,10 +75,8 @@ export class RegistroEventosScreenComponent implements OnInit {
             nombre: m.user.first_name + ' ' + m.user.last_name + ' (Maestro)'
           });
         });
-      }, (error) => { console.error("Error al obtener maestros", error); }
+      }, (error) => { console.error(error); }
     );
-
-    // 2. Obtener Administradores
     this.administradoresService.obtenerListaAdmins().subscribe(
       (admins) => {
         admins.forEach((a: any) => {
@@ -87,7 +85,7 @@ export class RegistroEventosScreenComponent implements OnInit {
             nombre: a.user.first_name + ' ' + a.user.last_name + ' (Admin)'
           });
         });
-      }, (error) => { console.error("Error al obtener admins", error); }
+      }, (error) => { console.error(error); }
     );
   }
 
@@ -95,7 +93,7 @@ export class RegistroEventosScreenComponent implements OnInit {
     this.eventosService.obtenerEventoPorID(id).subscribe(
       (response) => {
         this.evento = response;
-        // Mapear los checkboxes seleccionados
+        this.evento.publico_objetivo = this.evento.publico_objetivo || [];
         this.publico_options.forEach(opt => {
           if (this.evento.publico_objetivo.includes(opt.value)) {
             opt.checked = true;
@@ -114,7 +112,6 @@ export class RegistroEventosScreenComponent implements OnInit {
     } else {
       this.evento.publico_objetivo = this.evento.publico_objetivo.filter((item: string) => item !== opcion.value);
     }
-    // Validar si quitaron "Estudiantes"
     if (!this.evento.publico_objetivo.includes('Estudiantes')) {
       this.evento.programa_educativo = '';
     }
@@ -132,7 +129,6 @@ export class RegistroEventosScreenComponent implements OnInit {
     this.errors = this.eventosService.validarEvento(this.evento);
     if (Object.keys(this.errors).length > 0) return;
 
-    // Formatear fecha para Django
     if(this.evento.fecha_realizacion){
       const fecha = new Date(this.evento.fecha_realizacion);
       this.evento.fecha_realizacion = fecha.toISOString().split('T')[0];
@@ -148,30 +144,21 @@ export class RegistroEventosScreenComponent implements OnInit {
     );
   }
 
-  // PUNTO 15: Modal de Advertencia al Editar
   public actualizar() {
     this.errors = this.eventosService.validarEvento(this.evento);
     if (Object.keys(this.errors).length > 0) return;
 
-    // Abrir Modal
     const dialogRef = this.dialog.open(EliminarUserModalComponent, {
-      data: { 
-        id: this.idEvento, 
-        rol: 'evento_editar' // Usamos un identificador especial para cambiar el texto en el modal
-      },
-      height: '288px',
-      width: '328px',
+      data: { id: this.idEvento, rol: 'evento_editar' },
+      height: '288px', width: '328px',
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result && result.isDelete) { // Si el usuario dijo "Sí" (en el modal, el botón de acción devuelve true)
-        
-        // Formatear fecha
+      if (result && result.isDelete) {
         if(this.evento.fecha_realizacion){
           const fecha = new Date(this.evento.fecha_realizacion);
           this.evento.fecha_realizacion = fecha.toISOString().split('T')[0];
         }
-
         this.eventosService.actualizarEvento(this.evento).subscribe(
           (response) => {
             alert("Evento actualizado correctamente");

@@ -3,49 +3,57 @@
     (closedStart)="closeSidebar()" [disableClose]="!isMobileView">
     <nav>
       <ul class="sidebar-list">
-        <!-- Inicio - Available for admin and teachers only -->
         <li *ngIf="canSeeHomeItem()" routerLink="/home" routerLinkActive="active" (click)="closeSidebar()">
           <mat-icon>home</mat-icon>
           <span>Inicio</span>
         </li>
-        <li *ngIf="canSeeRegisterItem()" routerLink="/registro-usuarios" routerLinkActive="active"
-          (click)="closeSidebar()">
+        
+        <li *ngIf="canSeeRegisterItem()" routerLink="/registro-usuarios" routerLinkActive="active" (click)="closeSidebar()">
           <mat-icon>person_add</mat-icon>
-          <span>Registro</span>
+          <span>Registro Usuarios</span>
         </li>
 
-        <!-- Admins - Only for administrators -->
         <li *ngIf="canSeeAdminItems()" routerLink="/administrador" routerLinkActive="active" (click)="closeSidebar()">
           <mat-icon>admin_panel_settings</mat-icon>
           <span>Admins</span>
         </li>
 
-        <!-- Maestros - Only for administrators -->
         <li *ngIf="canSeeAdminItems()" routerLink="/maestros" routerLinkActive="active" (click)="closeSidebar()">
           <mat-icon>people</mat-icon>
           <span>Maestros</span>
         </li>
 
-        <!-- Alumnos - Available for all users -->
         <li *ngIf="canSeeStudentItems()" routerLink="/alumnos" routerLinkActive="active" (click)="closeSidebar()">
           <mat-icon>school</mat-icon>
           <span>Alumnos</span>
         </li>
 
-        <!-- Gráficas - Available for all users -->
         <li *ngIf="canSeeStudentItems()" routerLink="/graficas" routerLinkActive="active" (click)="closeSidebar()">
           <mat-icon>bar_chart</mat-icon>
           <span>Gráficas</span>
         </li>
 
-        <!-- Eventos Académicos - Available for administrators and teachers -->
-        <li *ngIf="canSeeStudentItems()" routerLink="/eventos-academicos" routerLinkActive="active"
-          class="eventos-academicos" (click)="closeSidebar()">
-          <mat-icon>event</mat-icon>
-          <span>Eventos Académicos</span>
+        <li *ngIf="canSeeStudentItems()" (click)="toggleEventos()" [class.active-parent]="isEventosOpen" class="dropdown-toggle">
+          <div class="label-container">
+            <mat-icon>event</mat-icon>
+            <span>Eventos</span>
+          </div>
+          <mat-icon class="arrow-icon" [class.rotate]="isEventosOpen">expand_more</mat-icon>
         </li>
 
-      </ul>
+        <div class="submenu-container" *ngIf="isEventosOpen">
+            <li class="submenu-item" routerLink="/eventos-academicos" routerLinkActive="active" (click)="closeSidebar()">
+                <mat-icon>list</mat-icon>
+                <span>Ver Lista</span>
+            </li>
+            
+            <li *ngIf="isAdmin()" class="submenu-item" routerLink="/registro-eventos" routerLinkActive="active" (click)="closeSidebar()">
+                <mat-icon>add_circle_outline</mat-icon>
+                <span>Registrar</span>
+            </li>
+        </div>
+        </ul>
+      
       <button mat-flat-button color="warn" class="logout-btn" (click)="logout()">
         <mat-icon>logout</mat-icon>
         <span>Cerrar sesión</span>
@@ -53,6 +61,6 @@
     </nav>
   </mat-sidenav>
   <mat-sidenav-content>
-    <!-- Main content goes here -->
+    <router-outlet></router-outlet>
   </mat-sidenav-content>
 </mat-sidenav-container>

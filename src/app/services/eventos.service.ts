@@ -106,11 +106,23 @@ export class EventosService {
       error['responsable'] = this.errorService.required;
     }
 
-    // 10. Descripción breve: Max 300 caracteres
+    // REQUISITO 10: Validación estricta de caracteres en descripción
     if (!this.validatorService.required(data['descripcion'])) {
       error['descripcion'] = this.errorService.required;
     } else if (!this.validatorService.max(data['descripcion'], 300)) {
       error['descripcion'] = this.errorService.max(300);
+    } else if (!/^[a-zA-Z0-9\s.,;!?()ñÑáéíóúÁÉÍÓÚ]+$/.test(data['descripcion'])) {
+      error['descripcion'] = 'Solo se permiten letras, números y signos de puntuación básicos';
+    }
+
+    if (!this.validatorService.required(data['cupo'])) {
+      error['cupo'] = this.errorService.required;
+    } else if (!this.validatorService.numeric(data['cupo'])) {
+      error['cupo'] = this.errorService.numeric;
+    } else if (parseInt(data['cupo']) <= 0) {
+      error['cupo'] = 'Debe ser un número positivo';
+    } else if (data['cupo'].toString().length > 3) {
+      error['cupo'] = 'Máximo 3 dígitos';
     }
 
     // 11. Cupo máximo: Enteros positivos, 3 dígitos (max 999)
