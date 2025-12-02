@@ -135,7 +135,7 @@ export class EventosService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + token
     });
-    return this.http.post<any>(`${environment.url_api}/eventos/`, data, { headers });
+    return this.http.post<any>(`${environment.url_api}/lista-eventos/`, data, { headers });
   }
 
   public obtenerListaEventos(): Observable<any> {
@@ -144,7 +144,7 @@ export class EventosService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + token
     });
-    return this.http.get<any>(`${environment.url_api}/eventos/`, { headers });
+    return this.http.get<any>(`${environment.url_api}/lista-eventos/`, { headers });
   }
 
   public obtenerEventoPorID(id: number): Observable<any> {

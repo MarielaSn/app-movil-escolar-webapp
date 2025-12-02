@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog'; // Importar Dialog
 import { EventosService } from 'src/app/services/eventos.service';
 import { FacadeService } from 'src/app/services/facade.service';
-// Importa los servicios de maestros/admins si los tienes para llenar el select de responsables
-// import { MaestrosService } from 'src/app/services/maestros.service';
-// import { AdministradoresService } from 'src/app/services/administradores.service';
+import { MaestrosService } from 'src/app/services/maestros.service';
+import { AdministradoresService } from 'src/app/services/administradores.service';
+// Reutilizamos el modal de eliminar para la confirmación, cambiándole el texto
+import { EliminarUserModalComponent } from 'src/app/modals/eliminar-user-modal/eliminar-user-modal.component';
 
 @Component({
   selector: 'app-registro-eventos-screen',
@@ -26,7 +28,7 @@ export class RegistroEventosScreenComponent implements OnInit {
     "Licenciatura en Ciencias de la Computación",
     "Ingeniería en Tecnologías de la Información"
   ];
-  public lista_responsables: any[] = []; // Aquí cargarás maestros y admins
+  public lista_responsables: any[] = [];
 
   // Checkboxes de público
   public publico_options = [
@@ -40,14 +42,16 @@ export class RegistroEventosScreenComponent implements OnInit {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private eventosService: EventosService,
-    private facadeService: FacadeService
+    private facadeService: FacadeService,
+    private maestrosService: MaestrosService,
+    private administradoresService: AdministradoresService,
+    private dialog: MatDialog // Inyectar MatDialog
   ) { }
 
   ngOnInit(): void {
-    // 1. Obtener lista de responsables (Simulada o llamar a tus servicios reales)
     this.obtenerResponsables();
 
-    // 2. Verificar si es Editar o Nuevo
+    // Verificar si es Editar o Nuevo
     if (this.activatedRoute.snapshot.params['id']) {
       this.isUpdate = true;
       this.idEvento = this.activatedRoute.snapshot.params['id'];
@@ -58,14 +62,33 @@ export class RegistroEventosScreenComponent implements OnInit {
     }
   }
 
+  // PUNTO 9: Carga Real de Responsables
   public obtenerResponsables() {
-    // AQUÍ DEBES LLAMAR A TUS SERVICIOS DE MAESTROS Y ADMINS
-    // Por ahora dejaré datos dummy para que funcione la visualización
-    this.lista_responsables = [
-      { id: 1, nombre: 'Admin Principal' },
-      { id: 2, nombre: 'Maestro Yael' },
-      { id: 3, nombre: 'Maestra Lupita' }
-    ];
+    this.lista_responsables = [];
+    
+    // 1. Obtener Maestros
+    this.maestrosService.obtenerListaMaestros().subscribe(
+      (maestros) => {
+        maestros.forEach((m: any) => {
+          this.lista_responsables.push({
+            id: m.user.id,
+            nombre: m.user.first_name + ' ' + m.user.last_name + ' (Maestro)'
+          });
+        });
+      }, (error) => { console.error("Error al obtener maestros", error); }
+    );
+
+    // 2. Obtener Administradores
+    this.administradoresService.obtenerListaAdmins().subscribe(
+      (admins) => {
+        admins.forEach((a: any) => {
+          this.lista_responsables.push({
+            id: a.user.id,
+            nombre: a.user.first_name + ' ' + a.user.last_name + ' (Admin)'
+          });
+        });
+      }, (error) => { console.error("Error al obtener admins", error); }
+    );
   }
 
   public obtenerEvento(id: number) {
@@ -84,7 +107,6 @@ export class RegistroEventosScreenComponent implements OnInit {
     );
   }
 
-  // Detectar cambios en checkboxes
   public checkboxChange(opcion: any) {
     opcion.checked = !opcion.checked;
     if (opcion.checked) {
@@ -92,15 +114,13 @@ export class RegistroEventosScreenComponent implements OnInit {
     } else {
       this.evento.publico_objetivo = this.evento.publico_objetivo.filter((item: string) => item !== opcion.value);
     }
-    
-    // Validar si quitaron "Estudiantes" para limpiar el programa educativo
+    // Validar si quitaron "Estudiantes"
     if (!this.evento.publico_objetivo.includes('Estudiantes')) {
       this.evento.programa_educativo = '';
     }
   }
 
   public revisarProgramaEducativo(): boolean {
-    // Mostrar solo si 'Estudiantes' está seleccionado
     return this.evento.publico_objetivo.includes('Estudiantes');
   }
 
@@ -112,6 +132,12 @@ export class RegistroEventosScreenComponent implements OnInit {
     this.errors = this.eventosService.validarEvento(this.evento);
     if (Object.keys(this.errors).length > 0) return;
 
+    // Formatear fecha para Django
+    if(this.evento.fecha_realizacion){
+      const fecha = new Date(this.evento.fecha_realizacion);
+      this.evento.fecha_realizacion = fecha.toISOString().split('T')[0];
+    }
+
     this.eventosService.registrarEvento(this.evento).subscribe(
       (response) => {
         alert("Evento registrado correctamente");
@@ -122,19 +148,39 @@ export class RegistroEventosScreenComponent implements OnInit {
     );
   }
 
+  // PUNTO 15: Modal de Advertencia al Editar
   public actualizar() {
     this.errors = this.eventosService.validarEvento(this.evento);
     if (Object.keys(this.errors).length > 0) return;
 
-    // Aquí iría el modal de confirmación antes de enviar (Punto 88 del PDF)
-    // Por simplicidad, llamamos directo, pero deberías usar tu modal existente
-    this.eventosService.actualizarEvento(this.evento).subscribe(
-      (response) => {
-        alert("Evento actualizado correctamente");
-        this.router.navigate(['/eventos-academicos']);
-      }, (error) => {
-        alert("Error al actualizar evento");
+    // Abrir Modal
+    const dialogRef = this.dialog.open(EliminarUserModalComponent, {
+      data: { 
+        id: this.idEvento, 
+        rol: 'evento_editar' // Usamos un identificador especial para cambiar el texto en el modal
+      },
+      height: '288px',
+      width: '328px',
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result && result.isDelete) { // Si el usuario dijo "Sí" (en el modal, el botón de acción devuelve true)
+        
+        // Formatear fecha
+        if(this.evento.fecha_realizacion){
+          const fecha = new Date(this.evento.fecha_realizacion);
+          this.evento.fecha_realizacion = fecha.toISOString().split('T')[0];
+        }
+
+        this.eventosService.actualizarEvento(this.evento).subscribe(
+          (response) => {
+            alert("Evento actualizado correctamente");
+            this.router.navigate(['/eventos-academicos']);
+          }, (error) => {
+            alert("Error al actualizar evento");
+          }
+        );
       }
-    );
+    });
   }
 }

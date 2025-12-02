@@ -7,7 +7,7 @@
             </button>
         </div>
 
-        <mat-form-field appearance="standard">
+        <mat-form-field appearance="outline">
             <mat-label>Filtrar por nombre</mat-label>
             <input matInput (keyup)="applyFilter($event)" placeholder="Ej. Congreso..." #input>
         </mat-form-field>
@@ -63,11 +63,11 @@
                 <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
                 <tr class="mat-row" *matNoDataRow>
-                    <td class="mat-cell" colspan="4">No se encontraron datos con el filtro "{{input.value}}"</td>
+                    <td class="mat-cell" colspan="7">No se encontraron datos con el filtro "{{input.value}}"</td>
                 </tr>
             </table>
 
-            <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of users"></mat-paginator>
+            <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of events"></mat-paginator>
         </div>
     </div>
 </div>

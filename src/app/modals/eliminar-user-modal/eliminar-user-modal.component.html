@@ -1,19 +1,30 @@
-<div class="wrapper">
-  <div class="icon-close">
-      <button class="btn" (click)="cerrar_modal()">
-          <i class="bi bi-x-lg"></i>
-      </button>
-  </div>
-  <div class="body-modal">
-      <h1 class="title-modal">Eliminar {{rol}}</h1>
-      <span class="descripcion">Estás a punto de eliminar este {{rol}}. Una vez que lo elimines no podrás deshacer esta acción.</span>
-      <div class="buttons-modal">
-          <button mat-button class="btn-regresar" (click)="cerrar_modal()">
-              Cancelar
-          </button>
-          <button mat-button class="btn-eliminar" (click)="eliminarUser()">
-              Eliminar
-          </button>
-      </div>
-  </div>
+<div class="container-modal">
+    <div class="header">
+        <!-- Título dinámico -->
+        <h1 *ngIf="data.rol !== 'evento_editar'">Eliminar usuario</h1>
+        <h1 *ngIf="data.rol === 'evento_editar'">Editar evento</h1>
+        <button mat-icon-button (click)="onNoClick()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+    <div class="body">
+        <!-- Mensaje dinámico -->
+        <p *ngIf="data.rol !== 'evento_editar'">
+            ¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.
+        </p>
+        <p *ngIf="data.rol === 'evento_editar'">
+            Estás a punto de editar este evento y se generarán los cambios.
+        </p>
+    </div>
+    <div class="footer">
+        <button mat-button (click)="onNoClick()">CANCELAR</button>
+        
+        <!-- Botón de acción dinámico -->
+        <button mat-raised-button color="warn" (click)="onDelete()" *ngIf="data.rol !== 'evento_editar'">
+            ELIMINAR
+        </button>
+        <button mat-raised-button color="primary" (click)="onDelete()" *ngIf="data.rol === 'evento_editar'">
+            EDITAR
+        </button>
+    </div>
 </div>
